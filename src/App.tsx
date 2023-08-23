@@ -9,7 +9,7 @@ import { FormatResponseUI } from './components/FormatResponseUI';
 import { setupFakeFetch } from './utils/fakeFetch';
 import { API_ENDPOINTS } from './constants/apiEndpoints';
 
-enum DataSources {
+export enum DataSources {
   MYSQL = 'MYSQL',
   MYSQL_PVML = 'MYSQL_PVML',
 }
@@ -50,24 +50,29 @@ export const App: FC = () => {
   const runQuery: FormEventHandler<HTMLFormElement> = async event => {
     event.preventDefault();
 
+    if (!query) {
+      setError('Incorrect input.');
+      return;
+    }
+
     try {
-      // check if the value is a valid JSON format
-      // and it has all the required fields
-      const { source, sql } = JSON.parse(query);
-      if (!source || !sql) throw new Error();
+      const responses = await Promise.all([
+        fetch(API_ENDPOINTS.executeMySql, {
+          method: 'POST',
+          body: JSON.stringify({ source: DataSources.MYSQL, sql: query }),
+        }),
+        fetch(API_ENDPOINTS.executeMySqlPvml, {
+          method: 'POST',
+          body: JSON.stringify({ source: DataSources.MYSQL_PVML, sql: query }),
+        }),
+      ]);
+      const mySqlData = await responses[0].text();
+      const mySqlPvmlData = await responses[1].text();
 
-      const endpoint =
-        API_ENDPOINTS[
-          dataSource === DataSources.MYSQL ? 'executeMySql' : 'executeMySqlPvml'
-        ];
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        body: query,
+      setResult({
+        [DataSources.MYSQL]: mySqlData,
+        [DataSources.MYSQL_PVML]: mySqlPvmlData,
       });
-      const data = await response.text();
-
-      setResult(prevState => ({ ...prevState, [dataSource]: data }));
       setQuery('');
     } catch {
       setError('Incorrect input.');
