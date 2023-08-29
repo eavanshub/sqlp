@@ -1,38 +1,39 @@
-import { ChangeEventHandler, FormEventHandler, useEffect } from 'react';
+import {
+  ChangeEventHandler,
+  FormEventHandler,
+  useEffect,
+  useReducer,
+} from 'react';
 
-import { useStore } from '../store/useStore';
 import { overrideFetch } from '../utils/overrideFetch';
-import { DataSources } from '../store/reducer';
+import { DataSources, reducer } from '../store/reducer';
 import { API_ENDPOINTS } from '../constants/apiEndpoints';
+import { initialState } from '../store/initialState';
+import {
+  setError,
+  setDataSource,
+  setLoading,
+  setQuery,
+  setResult,
+} from '../store/actions';
 
 export const usePlaygroundHandlers = () => {
-  const {
-    error,
-    query,
-    isLoading,
-    dataSource,
-    result,
-    setError,
-    setLoading,
-    setDataSource,
-    setQuery,
-    setResult,
-  } = useStore();
+  const [{ isLoading, dataSource, error, query, result }, dispatch] =
+    useReducer(reducer, initialState);
 
   useEffect(() => {
     overrideFetch();
   }, []);
 
   const onChangeQuery: ChangeEventHandler<HTMLTextAreaElement> = event => {
-    if (error) setError('');
-    setQuery(event.target.value);
+    setQuery(dispatch, event.target.value);
   };
 
   const onChangeDataSource: ChangeEventHandler<HTMLInputElement> = ({
     target: { value, checked },
   }) => {
     if (checked) {
-      setDataSource(value as DataSources);
+      setDataSource(dispatch, value as DataSources);
     }
   };
 
@@ -42,12 +43,12 @@ export const usePlaygroundHandlers = () => {
     event.preventDefault();
 
     if (!query) {
-      setError('This field can not be empty.');
+      setError(dispatch, 'This field can not be empty.');
       return;
     }
 
     try {
-      setLoading(true);
+      setLoading(dispatch, true);
       const responses = await Promise.all([
         fetch(API_ENDPOINTS.executeMySql, {
           method: 'POST',
@@ -61,14 +62,12 @@ export const usePlaygroundHandlers = () => {
       const mySqlData = await responses[0].text();
       const mySqlPvmlData = await responses[1].text();
 
-      setResult({
+      setResult(dispatch, {
         [DataSources.MYSQL]: mySqlData,
         [DataSources.MYSQL_PVML]: mySqlPvmlData,
       });
     } catch {
-      setError('Oops... Something went wrong.');
-    } finally {
-      setLoading(false);
+      setError(dispatch, 'Oops... Something went wrong.');
     }
   };
 

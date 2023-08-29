@@ -39,7 +39,7 @@ interface SetResultAction {
 }
 
 // common action type
-type Action =
+export type Action =
   | SetLoadingAction
   | SetErrorAction
   | SetQueryAction
@@ -52,13 +52,13 @@ export const reducer = (state: State, action: Action): State => {
     case SET_LOADING:
       return { ...state, isLoading: action.payload };
     case SET_ERROR:
-      return { ...state, error: action.payload };
+      return { ...state, error: action.payload, isLoading: false };
     case SET_QUERY:
-      return { ...state, query: action.payload };
+      return { ...state, query: action.payload, error: '' };
     case SET_DATASOURCE:
       return { ...state, dataSource: action.payload };
     case SET_RESULT:
-      return { ...state, result: action.payload };
+      return { ...state, result: action.payload, isLoading: false };
     default:
       return state;
   }

@@ -4,10 +4,6 @@ import { FormatResponseUI } from './components/FormatResponseUI';
 import { Spinner } from './assets/Spinner';
 import { DataSources } from './store/reducer';
 import { usePlaygroundHandlers } from './hooks/usePlaygroundHandlers';
-import {
-  CHECKED_RADIO_CLASSES,
-  UNCHECKED_RADIO_CLASSES,
-} from './constants/classes';
 
 export const App: FC = () => {
   const {
@@ -92,3 +88,8 @@ export const App: FC = () => {
     </div>
   );
 };
+
+const CHECKED_RADIO_CLASSES =
+  'text-white py-1 px-16 bg-aqua rounded-md cursor-pointer';
+const UNCHECKED_RADIO_CLASSES =
+  'text-gray-400 py-1 px-16 rounded-md cursor-pointer';
