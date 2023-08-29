@@ -5,9 +5,11 @@ import {
   useEffect,
   useState,
 } from 'react';
+
 import { FormatResponseUI } from './components/FormatResponseUI';
-import { setupFakeFetch } from './utils/fakeFetch';
+import { overrideFetch } from './utils/overrideFetch';
 import { API_ENDPOINTS } from './constants/apiEndpoints';
+import { Spinner } from './assets/Spinner';
 
 export enum DataSources {
   MYSQL = 'MYSQL',
@@ -20,6 +22,7 @@ const UNCHECKED_RADIO_CLASSES =
   'text-gray-400 py-1 px-16 rounded-md cursor-pointer';
 
 export const App: FC = () => {
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
   const [dataSource, setDataSource] = useState<DataSources>(DataSources.MYSQL);
@@ -29,10 +32,10 @@ export const App: FC = () => {
   });
 
   useEffect(() => {
-    setupFakeFetch();
+    overrideFetch();
   }, []);
 
-  const onChangeQuery: ChangeEventHandler<HTMLInputElement> = event => {
+  const onChangeQuery: ChangeEventHandler<HTMLTextAreaElement> = event => {
     if (error) setError('');
     setQuery(event.target.value);
   };
@@ -51,11 +54,12 @@ export const App: FC = () => {
     event.preventDefault();
 
     if (!query) {
-      setError('Incorrect input.');
+      setError('This field can not be empty.');
       return;
     }
 
     try {
+      setLoading(true);
       const responses = await Promise.all([
         fetch(API_ENDPOINTS.executeMySql, {
           method: 'POST',
@@ -73,9 +77,10 @@ export const App: FC = () => {
         [DataSources.MYSQL]: mySqlData,
         [DataSources.MYSQL_PVML]: mySqlPvmlData,
       });
-      setQuery('');
     } catch {
-      setError('Incorrect input.');
+      setError('Oops... Something went wrong.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -84,17 +89,20 @@ export const App: FC = () => {
       <div className="max-w-[800px] w-full bg-gray-900 p-5 rounded-md">
         <form
           onSubmit={runQuery}
-          className="relative grid grid-cols-[1fr_auto] items-center rounded-md p-0.5 bg-gradient-to-r from-pink via-blue to-aqua"
+          className="relative grid grid-cols-[1fr_auto] gap-x-0.5 items-center rounded-md p-0.5 bg-gradient-to-r from-pink via-blue to-aqua"
         >
-          <input
+          <textarea
             value={query}
-            type="text"
             placeholder="Enter a query here"
-            className="py-2 bg-gray-700 rounded-l-md px-3 text-white"
+            className="py-2 bg-gray-700 rounded-l-md px-3 text-white min-h-[40px]"
             onChange={onChangeQuery}
           />
-          <button type="submit" className="py-2 px-14 text-white">
-            Run
+          <button
+            type="submit"
+            className="h-full flex items-center justify-center rounded w-[120px] text-white"
+            disabled={loading}
+          >
+            {loading ? <Spinner /> : 'Run'}
           </button>
           {error && (
             <div className="text-rose-600 absolute -bottom-5 text-sm">
@@ -138,7 +146,7 @@ export const App: FC = () => {
             </label>
           </div>
 
-          <div className="border border-2 border-aqua bg-gray-700 h-72 p-3 rounded-md text-white">
+          <div className="border border-2 border-aqua bg-gray-700 p-3 rounded-md text-white">
             <FormatResponseUI response={result[dataSource]} />
           </div>
         </div>

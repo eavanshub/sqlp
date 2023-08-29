@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body, #root {
-    min-height: 100vh;
+html,
+body,
+#root {
+  min-height: 100vh;
+}
+
+.ReactVirtualized__Table__headerColumn:first-of-type,
+.ReactVirtualized__Table__rowColumn:first-of-type {
+  margin: 0;
 }
