@@ -1,5 +1,6 @@
 import { API_ENDPOINTS } from '../constants/apiEndpoints';
-import { DataSources } from '../App';
+
+import { DataSources } from '../store/reducer';
 
 export function overrideFetch() {
   window.fetch = new Proxy(window.fetch, {

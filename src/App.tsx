@@ -1,88 +1,26 @@
-import {
-  ChangeEventHandler,
-  FC,
-  FormEventHandler,
-  useEffect,
-  useState,
-} from 'react';
+import { FC } from 'react';
 
 import { FormatResponseUI } from './components/FormatResponseUI';
-import { overrideFetch } from './utils/overrideFetch';
-import { API_ENDPOINTS } from './constants/apiEndpoints';
 import { Spinner } from './assets/Spinner';
-
-export enum DataSources {
-  MYSQL = 'MYSQL',
-  MYSQL_PVML = 'MYSQL_PVML',
-}
-
-const CHECKED_RADIO_CLASSES =
-  'text-white py-1 px-16 bg-aqua rounded-md cursor-pointer';
-const UNCHECKED_RADIO_CLASSES =
-  'text-gray-400 py-1 px-16 rounded-md cursor-pointer';
+import { DataSources } from './store/reducer';
+import { usePlaygroundHandlers } from './hooks/usePlaygroundHandlers';
+import {
+  CHECKED_RADIO_CLASSES,
+  UNCHECKED_RADIO_CLASSES,
+} from './constants/classes';
 
 export const App: FC = () => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [query, setQuery] = useState('');
-  const [dataSource, setDataSource] = useState<DataSources>(DataSources.MYSQL);
-  const [result, setResult] = useState<Record<DataSources, string>>({
-    [DataSources.MYSQL]: '',
-    [DataSources.MYSQL_PVML]: '',
-  });
-
-  useEffect(() => {
-    overrideFetch();
-  }, []);
-
-  const onChangeQuery: ChangeEventHandler<HTMLTextAreaElement> = event => {
-    if (error) setError('');
-    setQuery(event.target.value);
-  };
-
-  const onChangeDataSource: ChangeEventHandler<HTMLInputElement> = ({
-    target: { value, checked },
-  }) => {
-    if (checked) {
-      setDataSource(value as DataSources);
-    }
-  };
-
-  const isMySQLChecked = dataSource === DataSources.MYSQL;
-
-  const runQuery: FormEventHandler<HTMLFormElement> = async event => {
-    event.preventDefault();
-
-    if (!query) {
-      setError('This field can not be empty.');
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const responses = await Promise.all([
-        fetch(API_ENDPOINTS.executeMySql, {
-          method: 'POST',
-          body: JSON.stringify({ source: DataSources.MYSQL, sql: query }),
-        }),
-        fetch(API_ENDPOINTS.executeMySqlPvml, {
-          method: 'POST',
-          body: JSON.stringify({ source: DataSources.MYSQL_PVML, sql: query }),
-        }),
-      ]);
-      const mySqlData = await responses[0].text();
-      const mySqlPvmlData = await responses[1].text();
-
-      setResult({
-        [DataSources.MYSQL]: mySqlData,
-        [DataSources.MYSQL_PVML]: mySqlPvmlData,
-      });
-    } catch {
-      setError('Oops... Something went wrong.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    runQuery,
+    query,
+    onChangeQuery,
+    isLoading,
+    error,
+    isMySQLChecked,
+    dataSource,
+    onChangeDataSource,
+    result,
+  } = usePlaygroundHandlers();
 
   return (
     <div className="bg-gray-700 min-h-screen flex items-center justify-center">
@@ -100,15 +38,15 @@ export const App: FC = () => {
           <button
             type="submit"
             className="h-full flex items-center justify-center rounded w-[120px] text-white"
-            disabled={loading}
+            disabled={isLoading}
           >
-            {loading ? <Spinner /> : 'Run'}
+            {isLoading ? <Spinner /> : 'Run'}
           </button>
-          {error && (
+          {error ? (
             <div className="text-rose-600 absolute -bottom-5 text-sm">
               {error}
             </div>
-          )}
+          ) : null}
         </form>
         <div className="mt-16">
           <div className="bg-gray-700 p-1.5 rounded-md w-fit text-sm">
